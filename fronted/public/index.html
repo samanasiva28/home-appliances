@@ -24,44 +24,52 @@
 
     // Load Category Grid
     async function loadCategories() {
-      const res = await fetch('/api/categories');
-      const categories = await res.json();
-      
-      let html = '<h2>Select a Category</h2><div class="grid">';
-      categories.forEach(cat => {
-        html += `<div class="card" onclick="loadProducts('${cat.slug}')">
-                   <h3>${cat.name}</h3>
-                 </div>`;
-      });
-      html += '</div>';
-      app.innerHTML = html;
+      try {
+        const res = await fetch('/api/categories');
+        const categories = await res.json();
+        
+        let html = '<h2>Select a Category</h2><div class="grid">';
+        categories.forEach(cat => {
+          html += `<div class="card" onclick="loadProducts('${cat.slug}')">
+                     <h3>${cat.name}</h3>
+                   </div>`;
+        });
+        html += '</div>';
+        app.innerHTML = html;
+      } catch (err) {
+        console.error('Error loading categories:', err);
+      }
     }
 
     // Load Products by Category & Track Interaction
     async function loadProducts(categorySlug) {
-      const res = await fetch(`/api/products/${categorySlug}`);
-      const products = await res.json();
+      try {
+        const res = await fetch(`/api/products/${categorySlug}`);
+        const products = await res.json();
 
-      let html = `<button class="btn-back" onclick="loadCategories()">← Back to Categories</button>`;
-      html += `<h2>${categorySlug.toUpperCase()} Models</h2><div class="product-list">`;
+        let html = `<button class="btn-back" onclick="loadCategories()">← Back to Categories</button>`;
+        html += `<h2>${categorySlug.toUpperCase()} Models</h2><div class="product-list">`;
 
-      if (products.length === 0) {
-        html += '<p>No products available in this category.</p>';
-      } else {
-        products.forEach(p => {
-          // Log interaction automatically when product is viewed
-          logInteraction(p.product_id, 'view_page');
+        if (!products || products.length === 0) {
+          html += '<p>No products available in this category.</p>';
+        } else {
+          products.forEach(p => {
+            // Log interaction automatically when product is viewed
+            logInteraction(p.product_id, 'view_page');
 
-          const specs = JSON.stringify(p.specs);
-          html += `<div class="product-item">
-                     <h3>${p.brand} - ${p.model_name}</h3>
-                     <p><strong>Price:</strong> ₹${p.price}</p>
-                     <p><strong>Specs:</strong> ${specs}</p>
-                   </div>`;
-        });
+            const specs = JSON.stringify(p.specs);
+            html += `<div class="product-item">
+                       <h3>${p.brand} - ${p.model_name}</h3>
+                       <p><strong>Price:</strong> ₹${p.price}</p>
+                       <p><strong>Specs:</strong> ${specs}</p>
+                     </div>`;
+          });
+        }
+        html += '</div>';
+        app.innerHTML = html;
+      } catch (err) {
+        console.error('Error loading products:', err);
       }
-      html += '</div>';
-      app.innerHTML = html;
     }
 
     // Send tracking data to backend
