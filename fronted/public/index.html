@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Home Appliance Store</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f6f8; }
+    h1 { color: #333; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+    .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; text-align: center; }
+    .card:hover { border: 2px solid #007bff; }
+    .product-list { margin-top: 20px; }
+    .product-item { background: white; padding: 15px; margin-bottom: 10px; border-radius: 6px; border-left: 4px solid #007bff; }
+    .btn-back { margin-bottom: 15px; padding: 8px 12px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <h1>Home Appliance Store</h1>
+  <div id="app"></div>
+
+  <script>
+    const app = document.getElementById('app');
+
+    // Load Category Grid
+    async function loadCategories() {
+      const res = await fetch('/api/categories');
+      const categories = await res.json();
+      
+      let html = '<h2>Select a Category</h2><div class="grid">';
+      categories.forEach(cat => {
+        html += `<div class="card" onclick="loadProducts('${cat.slug}')">
+                   <h3>${cat.name}</h3>
+                 </div>`;
+      });
+      html += '</div>';
+      app.innerHTML = html;
+    }
+
+    // Load Products by Category & Track Interaction
+    async function loadProducts(categorySlug) {
+      const res = await fetch(`/api/products/${categorySlug}`);
+      const products = await res.json();
+
+      let html = `<button class="btn-back" onclick="loadCategories()">← Back to Categories</button>`;
+      html += `<h2>${categorySlug.toUpperCase()} Models</h2><div class="product-list">`;
+
+      if (products.length === 0) {
+        html += '<p>No products available in this category.</p>';
+      } else {
+        products.forEach(p => {
+          // Log interaction automatically when product is viewed
+          logInteraction(p.product_id, 'view_page');
+
+          const specs = JSON.stringify(p.specs);
+          html += `<div class="product-item">
+                     <h3>${p.brand} - ${p.model_name}</h3>
+                     <p><strong>Price:</strong> ₹${p.price}</p>
+                     <p><strong>Specs:</strong> ${specs}</p>
+                   </div>`;
+        });
+      }
+      html += '</div>';
+      app.innerHTML = html;
+    }
+
+    // Send tracking data to backend
+    async function logInteraction(productId, actionType) {
+      try {
+        await fetch('/api/interactions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId, actionType })
+        });
+      } catch (err) {
+        console.error('Failed to log interaction:', err);
+      }
+    }
+
+    // Initialize home page
+    loadCategories();
+  </script>
+</body>
+</html>
